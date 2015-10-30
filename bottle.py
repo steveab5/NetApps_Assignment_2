@@ -125,17 +125,14 @@ def on_request(ch, method, props, body):
     print "[.] Received:"
     print " ", body
     Received_JSON_Object = json.loads(body)
-    response = json.dumps({"status" : "Not Found"})    
+    response = json.dumps({"Status" : "Not Found"})    
    
     if (Received_JSON_Object['Action'] == "push"):
 
 	response = json.dumps({"Status" : "Success"})
 	msgID = Received_JSON_Object['MsgID']
 	s[str(msgID)] = Received_JSON_Object 
-	s.sync()
-	keylist = s.keys()
-	decimal_num = len(keylist)
-	print decimal_num  
+	s.sync() 
     
     else:
 	keylist = s.keys()
@@ -145,8 +142,15 @@ def on_request(ch, method, props, body):
 		    if (s[k]['Subject']) == Received_JSON_Object['Subject'] or Received_JSON_Object['Subject'] == '':
 			if (s[k]['Message']) == Received_JSON_Object['Message'] or Received_JSON_Object['Message'] == '':
 			    response = json.dumps(s[k])
+			    if Received_JSON_Object['Action'] == "pull":
+				del s[k]
 			    break
 
+    
+    keylist = s.keys()
+    decimal_num = len(keylist)
+    print
+    print 'Number of messages: ', decimal_num 
     print
     print "[x] Replying with:"
     print " ", response  
@@ -163,3 +167,5 @@ channel.basic_consume(on_request, queue='rpc_queue')
 
 print "[x] Awaiting RPC requests "
 channel.start_consuming()
+
+
