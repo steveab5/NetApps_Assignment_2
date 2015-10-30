@@ -149,6 +149,7 @@ def on_request(ch, method, props, body):
     
     keylist = s.keys()
     decimal_num = len(keylist)
+    display_Binary_LEDS(decimal_num)
     print
     print 'Number of messages: ', decimal_num 
     print
