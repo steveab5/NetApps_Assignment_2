@@ -3,6 +3,7 @@ import pika
 import json
 import shelve
 import fnmatch
+import unicodedata
 import RPi.GPIO as GPIO
 
 connection = pika.BlockingConnection(pika.ConnectionParameters(
@@ -118,48 +119,38 @@ def display_Binary_LEDS(n):
         GPIO.output(12, 1)
         GPIO.output(13, 1)
         GPIO.output(15, 1)
- 
 
 def on_request(ch, method, props, body):
-
+    print
+    print "[.] Received:"
+    print " ", body
     Received_JSON_Object = json.loads(body)
-    #response = body    
+    response = json.dumps({"status" : "Not Found"})    
    
     if (Received_JSON_Object['Action'] == "push"):
 
-      response = json.dumps({"status" : "success"}) 
-      print 'replying with: ', response
-      msgID = Received_JSON_Object['MsgID']
-      s[str(msgID)] = Received_JSON_Object 
-      s.sync()
-      keylist = s.keys()
-      decimal_num = len(keylist)
-      print decimal_num
-
-    elif (Received_JSON_Object['Action'] == "pullr"):
-      print 'Not Push'
-      keylist = s.keys()
-      
-      for k in klist: 
-         if (Received_JSON_Object['Age'] == s[k]['Age']):
-             response = json.dumps(s[k])    
+	response = json.dumps({"Status" : "Success"})
+	msgID = Received_JSON_Object['MsgID']
+	s[str(msgID)] = Received_JSON_Object 
+	s.sync()
+	keylist = s.keys()
+	decimal_num = len(keylist)
+	print decimal_num  
     
     else:
-      print 'Not Push Either'
-      keylist = s.keys()
-    
-      for k in klist:
-         for key in Received_JSON_Object.iteritems(): 
-             if key == 'action':
-                continue
-             else 
-                if fnmatch.fnmatch(s[k][key], Received_JSON_Object[key]):
-                   k_to_store = k
-                else
-                   break
-                     
-      del s[k]
-  
+	keylist = s.keys()
+	for k in keylist:
+   	    if (s[k]['Author']) == Received_JSON_Object['Author'] or Received_JSON_Object['Author'] == '':
+		if str(s[k]['Age']) == str(Received_JSON_Object['Age']) or Received_JSON_Object['Age'] == '': 
+		    if (s[k]['Subject']) == Received_JSON_Object['Subject'] or Received_JSON_Object['Subject'] == '':
+			if (s[k]['Message']) == Received_JSON_Object['Message'] or Received_JSON_Object['Message'] == '':
+			    response = json.dumps(s[k])
+			    break
+
+    print
+    print "[x] Replying with:"
+    print " ", response  
+
     ch.basic_publish(exchange='',
                      routing_key=props.reply_to,
                      properties=pika.BasicProperties(correlation_id = \
@@ -170,7 +161,5 @@ def on_request(ch, method, props, body):
 channel.basic_qos(prefetch_count=1)
 channel.basic_consume(on_request, queue='rpc_queue')
 
-print " [x] Awaiting RPC requests "
+print "[x] Awaiting RPC requests "
 channel.start_consuming()
-
-
